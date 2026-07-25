@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Indian Nutrition RAG</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 60px auto; padding: 0 20px; background: #fafafa; }
+  h1 { font-size: 1.4rem; }
+  textarea { width: 100%; height: 70px; padding: 10px; font-size: 1rem; box-sizing: border-box; }
+  button { margin-top: 10px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+  #answer { margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px; white-space: pre-wrap; min-height: 40px; }
+  #contexts { margin-top: 15px; font-size: 0.85rem; color: #555; }
+  .ctx { background: #f0f0f0; padding: 8px; margin-bottom: 6px; border-radius: 4px; }
+  .loading { color: #888; }
+</style>
+</head>
+<body>
+  <h1>Indian Nutrition RAG</h1>
+  <textarea id="question" placeholder="e.g. How many calories in 2 rotis and a bowl of dal?"></textarea>
+  <br>
+  <button onclick="ask()">Ask</button>
+
+  <div id="answer"></div>
+  <div id="contexts"></div>
+
+<script>
+async function ask() {
+  const question = document.getElementById('question').value.trim();
+  if (!question) return;
+  const answerDiv = document.getElementById('answer');
+  const ctxDiv = document.getElementById('contexts');
+  answerDiv.textContent = 'Thinking...';
+  answerDiv.className = 'loading';
+  ctxDiv.innerHTML = '';
+
+  try {
+    const res = await fetch('http://localhost:8000/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, k: 4 })
+    });
+    if (!res.ok) throw new Error('Server error: ' + res.status);
+    const data = await res.json();
+    answerDiv.className = '';
+    answerDiv.textContent = data.answer;
+    ctxDiv.innerHTML = '<strong>Retrieved context:</strong>' +
+      data.contexts.map(c => `<div class="ctx">${c}</div>`).join('');
+  } catch (err) {
+    answerDiv.className = '';
+    answerDiv.textContent = 'Error: ' + err.message + ' (is the FastAPI server running on :8000?)';
+  }
+}
+</script>
+</body>
+</html>
